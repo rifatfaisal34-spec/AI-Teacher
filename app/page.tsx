@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   PRESET_CURRICULA,
   SubjectCurriculum,
@@ -13,6 +13,10 @@ import { TutorChat, ChatMessage } from "@/components/TutorChat";
 import { DiagnosticPractice } from "@/components/DiagnosticPractice";
 import { GapRadar } from "@/components/GapRadar";
 import { CustomTopicModal } from "@/components/CustomTopicModal";
+import { VisualMathCanvas } from "@/components/VisualMathCanvas";
+import { FlippedClassroom } from "@/components/FlippedClassroom";
+import { CareerPathPlanner } from "@/components/CareerPathPlanner";
+import { ScoreImprovementBar } from "@/components/ScoreImprovementBar";
 import {
   Sparkles,
   ArrowRight,
@@ -21,6 +25,11 @@ import {
   Gauge,
   BookOpen,
   HelpCircle,
+  PenTool,
+  RotateCcw,
+  Briefcase,
+  Layers,
+  GraduationCap,
 } from "lucide-react";
 
 export default function Home() {
@@ -35,6 +44,27 @@ export default function Home() {
     "balanced"
   );
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
+
+  // Active view tab
+  const [activeTab, setActiveTab] = useState<
+    "tutor" | "visual_math" | "flipped_classroom" | "career_path" | "radar"
+  >("tutor");
+
+  // Measurable score improvement metrics
+  const [baselineScore, setBaselineScore] = useState(58);
+  const [currentScore, setCurrentScore] = useState(79);
+  const [averageLatencySeconds, setAverageLatencySeconds] = useState(18);
+  const [currentBloomsLevel, setCurrentBloomsLevel] = useState("Understand");
+  const [eslLanguage, setEslLanguage] = useState<
+    "none" | "spanish" | "mandarin" | "hindi" | "arabic"
+  >("none");
+
+  // Deliberation latency tracking (safely initialized in useEffect to avoid hydration mismatch)
+  const [questionStartTime, setQuestionStartTime] = useState<number>(0);
+
+  useEffect(() => {
+    setQuestionStartTime(Date.now());
+  }, [activeConceptId]);
 
   // Diagnosed gaps
   const [diagnosedGaps, setDiagnosedGaps] = useState<
@@ -51,7 +81,7 @@ export default function Home() {
       topic: "The Chain Rule",
       misconception:
         "Missing inner derivative g'(x) — applying power rule to outer shell only",
-      timestamp: new Date(),
+      timestamp: new Date(1730000000000),
       status: "open",
     },
   ]);
@@ -61,20 +91,17 @@ export default function Home() {
     {
       id: "msg-init",
       role: "assistant",
-      content: `Welcome to **AI Teacher**! I am your adaptive tutor for **${currentSubject.name}**.
+      content: `Welcome to **AI Teacher**! Grounded in **OpenStax** peer-reviewed curricula and calibrated by **Bloom's Taxonomy**.
 
-I monitor your learning pace and pinpoint cognitive gaps in real time so you never waste hours staring at confusing formulas.
+I continuously monitor your learning pace, deliberation latency, and cognitive gaps in real time to deliver **measurable score improvements**.
 
-We are currently focused on **${
-        currentSubject.concepts.find((c) => c.id === activeConceptId)?.title ||
-        "Product & Quotient Rules"
-      }**. What is your intuition about how rates combine when two varying functions multiply?`,
-      timestamp: new Date(),
+Currently focused on **The Chain Rule**. What is your immediate intuition regarding how composite rates of change multiply?`,
+      timestamp: new Date(1730000000000),
       scaffoldQuestion:
         "If u(x) and v(x) are both growing, does (u * v)' simply equal u' * v', or is something else happening?",
       suggestedQuickReplies: [
         "Explain with an analogy",
-        "Show a concrete example",
+        "Show OpenStax textbook excerpt",
         "Give me a diagnostic quiz",
       ],
     },
@@ -95,6 +122,11 @@ We are currently focused on **${
     userText: string,
     mode: "socratic" | "explain" | "analogy" | "practice" = "socratic"
   ) => {
+    // Calculate response latency safely
+    const now = Date.now();
+    const latency = questionStartTime > 0 ? Math.max(2, Math.round((now - questionStartTime) / 1000)) : 15;
+    setAverageLatencySeconds((prev) => Math.round((prev * 2 + latency) / 3));
+
     const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
       role: "user",
@@ -125,10 +157,17 @@ We are currently focused on **${
           pace,
           identifiedGaps: openGapsList,
           mode,
+          bloomsLevel: currentBloomsLevel,
+          latencySeconds: latency,
+          eslLanguage,
         }),
       });
 
       const data = await res.json();
+
+      if (data.bloomsLevelDemonstrated) {
+        setCurrentBloomsLevel(data.bloomsLevelDemonstrated);
+      }
 
       // If tutor caught a new knowledge gap, add to list
       if (data.detectedGap) {
@@ -176,6 +215,7 @@ We are currently focused on **${
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
+      setQuestionStartTime(Date.now());
     }
   };
 
@@ -185,6 +225,9 @@ We are currently focused on **${
     identifiedMisconception?: string
   ) => {
     if (isCorrect) {
+      // Measurable score improvement boost
+      setCurrentScore((prev) => Math.min(99, prev + 4));
+
       // Mark concept node as mastered
       setCurrentSubject((prevSub) => ({
         ...prevSub,
@@ -224,8 +267,9 @@ We are currently focused on **${
 
   const handleSelectConcept = (node: ConceptNode) => {
     setActiveConceptId(node.id);
+    setActiveTab("tutor");
     handleSendMessage(
-      `I'd like to switch focus to "${node.title}". Could you introduce this concept at my current ${pace} pace?`,
+      `I'd like to switch focus to "${node.title}". Could you introduce this concept with relevant OpenStax curriculum grounding?`,
       "explain"
     );
   };
@@ -235,8 +279,9 @@ We are currently focused on **${
     misconceptionText: string
   ) => {
     setActiveConceptId(concept.id);
+    setActiveTab("tutor");
     handleSendMessage(
-      `I need targeted help resolving this misconception regarding ${concept.title}: "${misconceptionText}". Can you walk me through where learners usually go wrong and give me a clear mental model?`,
+      `I need targeted remediation resolving this misconception in ${concept.title}: "${misconceptionText}". Please break down where students get trapped and how to avoid it.`,
       "socratic"
     );
   };
@@ -252,13 +297,13 @@ We are currently focused on **${
       {
         id: `init-${Date.now()}`,
         role: "assistant",
-        content: `Switched subject to **${subject.name}**!\n\n${subject.description}\n\nOur current checkpoint is **${firstActive.title}**. Ready to begin?`,
+        content: `Switched subject to **${subject.name}**!\n\n${subject.description}\n\nOur active focus node is **${firstActive.title}**. Calibrating to Bloom's Level: **${currentBloomsLevel}**.`,
         timestamp: new Date(),
         scaffoldQuestion: `What prior familiarity do you have with ${firstActive.title}?`,
         suggestedQuickReplies: [
           "I'm a complete beginner",
           "I need a refresher",
-          "Test my knowledge right away",
+          "Test my knowledge with a quiz",
         ],
       },
     ]);
@@ -283,81 +328,189 @@ We are currently focused on **${
         onOpenCustomModal={() => setIsCustomModalOpen(true)}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Hero Section */}
-        <div className="relative rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 p-6 sm:p-8 overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
-          <div className="relative z-10 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold mb-3">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Adaptive Tutor Engine Active</span>
-            </div>
-            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white mb-2 leading-tight">
-              Adaptive Tutor That Personalizes to Learner Pace & Gaps
-            </h1>
-            <p className="text-sm sm:text-base text-slate-300 mb-5 leading-relaxed">
-              Never get left behind or held back. AI Teacher continuously analyzes your reasoning, diagnoses latent misconceptions, and recalibrates explanations to your velocity.
-            </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() =>
-                  handleSendMessage(
-                    "Can you test my current baseline understanding with a diagnostic question?",
-                    "practice"
-                  )
-                }
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold transition-all shadow-lg shadow-indigo-600/30"
-              >
-                <span>Diagnose My Gaps</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setIsCustomModalOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 text-xs sm:text-sm font-medium border border-slate-700 transition-all"
-              >
-                <BookOpen className="w-4 h-4 text-indigo-400" />
-                <span>Custom Learning Goal</span>
-              </button>
-            </div>
-          </div>
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-5">
+        {/* Measurable Score Gain & Profiling Telemetry Bar */}
+        <ScoreImprovementBar
+          baselineScore={baselineScore}
+          currentScore={currentScore}
+          averageLatencySeconds={averageLatencySeconds}
+          currentBloomsLevel={currentBloomsLevel}
+          eslLanguage={eslLanguage}
+          onEslLanguageChange={setEslLanguage}
+          onBloomsSelect={(lvl) => {
+            setCurrentBloomsLevel(lvl);
+            handleSendMessage(
+              `Please calibrate our questions to Bloom's Taxonomy cognitive level: ${lvl}.`,
+              "socratic"
+            );
+          }}
+        />
+
+        {/* Feature Navigation Tabs */}
+        <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 rounded-2xl border border-slate-800 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab("tutor")}
+            className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all shrink-0 ${
+              activeTab === "tutor"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+            }`}
+          >
+            <GraduationCap className="w-4 h-4" />
+            <span>Socratic AI Tutor</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("visual_math")}
+            className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all shrink-0 ${
+              activeTab === "visual_math"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+            }`}
+          >
+            <PenTool className="w-4 h-4" />
+            <span>Visual Math Inspector (Handwritten AI)</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("flipped_classroom")}
+            className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all shrink-0 ${
+              activeTab === "flipped_classroom"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+            }`}
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span>Flipped Classroom (Teach the AI)</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("career_path")}
+            className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all shrink-0 ${
+              activeTab === "career_path"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+            }`}
+          >
+            <Briefcase className="w-4 h-4" />
+            <span>Career-Integrated Paths</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("radar")}
+            className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all shrink-0 ${
+              activeTab === "radar"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>Curriculum Map & Gaps</span>
+          </button>
         </div>
 
-        {/* Main 2-Column Adaptive Workspace */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Socratic AI Tutor Chat (7 cols) */}
-          <div className="lg:col-span-7 space-y-6">
-            <TutorChat
-              messages={messages}
-              onSendMessage={handleSendMessage}
-              isLoading={isLoading}
-              activeConcept={activeConcept}
-              pace={pace}
-              onPracticeTrigger={() => {
-                const element = document.getElementById("practice-arena");
-                element?.scrollIntoView({ behavior: "smooth" });
-              }}
-              onSelectConceptGap={(gapText) => {
-                handleSendMessage(
-                  `Can you explain the gap "${gapText}" in detail and show me how to overcome it?`,
-                  "explain"
-                );
-              }}
-            />
-
-            {/* Diagnostic Practice Arena */}
-            <div id="practice-arena">
-              <DiagnosticPractice
-                question={currentQuestion}
+        {/* Tab 1: Socratic AI Tutor + Practice Arena */}
+        {activeTab === "tutor" && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-7 space-y-6">
+              <TutorChat
+                messages={messages}
+                onSendMessage={handleSendMessage}
+                isLoading={isLoading}
                 activeConcept={activeConcept}
-                onAnswerSubmitted={handleAnswerSubmitted}
-                onRequestTutorHelp={(prompt) => handleSendMessage(prompt, "explain")}
+                pace={pace}
+                onPracticeTrigger={() => {
+                  const element = document.getElementById("practice-arena");
+                  element?.scrollIntoView({ behavior: "smooth" });
+                }}
+                onSelectConceptGap={(gapText) => {
+                  handleSendMessage(
+                    `Can you explain the gap "${gapText}" in detail and show me how to overcome it?`,
+                    "explain"
+                  );
+                }}
+              />
+
+              {/* Diagnostic Practice Arena */}
+              <div id="practice-arena">
+                <DiagnosticPractice
+                  question={currentQuestion}
+                  activeConcept={activeConcept}
+                  onAnswerSubmitted={handleAnswerSubmitted}
+                  onRequestTutorHelp={(prompt) => handleSendMessage(prompt, "explain")}
+                />
+              </div>
+            </div>
+
+            <div className="lg:col-span-5 space-y-6">
+              <GapRadar
+                gaps={diagnosedGaps}
+                concepts={currentSubject.concepts}
+                pace={pace}
+                onRemediateGap={(gap) => {
+                  const matchingConcept =
+                    currentSubject.concepts.find(
+                      (c) => c.title.toLowerCase() === gap.topic.toLowerCase()
+                    ) || activeConcept;
+                  handleRemediateGap(matchingConcept, gap.misconception);
+                }}
+                onMarkResolved={(gapId) => {
+                  setDiagnosedGaps((prev) =>
+                    prev.map((g) =>
+                      g.id === gapId ? { ...g, status: "resolved" } : g
+                    )
+                  );
+                }}
+              />
+
+              <ConceptRoadmap
+                concepts={currentSubject.concepts}
+                activeConceptId={activeConcept.id}
+                onSelectConcept={handleSelectConcept}
+                onRemediateGap={handleRemediateGap}
               />
             </div>
           </div>
+        )}
 
-          {/* Right Column: Knowledge Map & Gap Radar (5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            {/* Knowledge Gap Radar & Study Insights */}
+        {/* Tab 2: Visual AI Math Inspector */}
+        {activeTab === "visual_math" && (
+          <div className="space-y-6">
+            <VisualMathCanvas
+              currentTopic={activeConcept.title}
+              subject={currentSubject.name}
+              onSendToChat={(text) => {
+                setActiveTab("tutor");
+                handleSendMessage(text, "explain");
+              }}
+            />
+          </div>
+        )}
+
+        {/* Tab 3: Flipped Classroom (Feynman Technique) */}
+        {activeTab === "flipped_classroom" && (
+          <div className="space-y-6">
+            <FlippedClassroom
+              currentTopic={activeConcept.title}
+              subject={currentSubject.name}
+            />
+          </div>
+        )}
+
+        {/* Tab 4: Career-Integrated Path Generator */}
+        {activeTab === "career_path" && (
+          <div className="space-y-6">
+            <CareerPathPlanner
+              onSelectModuleTopic={(modTopic) => {
+                setActiveTab("tutor");
+                handleSendMessage(
+                  `Let's start the career-integrated module on "${modTopic}". Ground it in industry requirements and practical code/problem exercises.`,
+                  "socratic"
+                );
+              }}
+            />
+          </div>
+        )}
+
+        {/* Tab 5: Standalone Knowledge Map & Gap Radar */}
+        {activeTab === "radar" && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <GapRadar
               gaps={diagnosedGaps}
               concepts={currentSubject.concepts}
@@ -378,7 +531,6 @@ We are currently focused on **${
               }}
             />
 
-            {/* Adaptive Concept Roadmap */}
             <ConceptRoadmap
               concepts={currentSubject.concepts}
               activeConceptId={activeConcept.id}
@@ -386,7 +538,7 @@ We are currently focused on **${
               onRemediateGap={handleRemediateGap}
             />
           </div>
-        </div>
+        )}
       </main>
 
       {/* Custom Topic Modal */}

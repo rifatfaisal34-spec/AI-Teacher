@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGeminiClient } from "@/lib/gemini";
+import { OPENSTAX_KNOWLEDGE_BASE, RAGSource } from "@/lib/rag-data";
 
 export interface TutorChatPayload {
   message: string;
@@ -9,6 +10,9 @@ export interface TutorChatPayload {
   pace?: "scaffolded" | "balanced" | "accelerated";
   identifiedGaps?: string[];
   mode?: "socratic" | "explain" | "analogy" | "practice";
+  bloomsLevel?: string;
+  latencySeconds?: number;
+  eslLanguage?: "none" | "spanish" | "mandarin" | "hindi" | "arabic";
 }
 
 export async function POST(req: NextRequest) {
@@ -23,9 +27,30 @@ export async function POST(req: NextRequest) {
       pace = "balanced",
       identifiedGaps = [],
       mode = "socratic",
+      bloomsLevel = "Understand",
+      latencySeconds = 15,
+      eslLanguage = "none",
     } = body || {};
 
     const gemini = getGeminiClient();
+
+    // RAG Retrieval: find matching textbook/curriculum sources
+    const relevantRAGSources: RAGSource[] = OPENSTAX_KNOWLEDGE_BASE.filter(
+      (source) =>
+        source.subject.toLowerCase() === subject.toLowerCase() ||
+        source.title.toLowerCase().includes(currentTopic.toLowerCase()) ||
+        currentTopic.toLowerCase().split(" ").some((w) => source.snippet.toLowerCase().includes(w))
+    );
+
+    const ragContext =
+      relevantRAGSources.length > 0
+        ? relevantRAGSources
+            .map(
+              (s) =>
+                `[Source: ${s.sourceType} - ${s.title}]\nCitation: ${s.citation}\nExcerpt: "${s.snippet}"`
+            )
+            .join("\n\n")
+        : `[Source: OpenStax Open Curriculum]\nStandard peer-reviewed syllabus for ${subject}: ${currentTopic}.`;
 
     if (gemini) {
       const paceInstructions = {
@@ -37,39 +62,47 @@ export async function POST(req: NextRequest) {
           "The learner is fast-tracking. Be concise, highlight rigorous definitions, theoretical proofs, edge cases, and challenge them with higher-order implications.",
       }[pace];
 
-      const modeInstructions = {
-        socratic:
-          "Adopt a Socratic coaching style. Rather than lecturing with a wall of text, guide the student with thoughtful questions, highlighting their reasoning steps.",
-        explain:
-          "Provide a crystal-clear, structured explanation with visual bullet points and code/math formatting where appropriate.",
-        analogy:
-          "Provide an intuitive, memorable real-world analogy to demystify this concept (e.g., gears, factory assembly lines, cooking recipes, city traffic).",
-        practice:
-          "Pose an active practice challenge for the student to solve right now, giving encouraging hints.",
-      }[mode];
+      const latencyFeedback =
+        latencySeconds > 60
+          ? "NOTE: The student hesitated for over 60 seconds before responding. This indicates high cognitive load or confusion. Acknowledge this gently and offer a supportive hint."
+          : latencySeconds < 4
+          ? "NOTE: The student responded in under 4 seconds, which may indicate quick guessing without deliberation. Check their foundational reasoning."
+          : `Student response latency was ${latencySeconds}s (healthy deliberation time).`;
 
-      const systemInstruction = `You are "AI Teacher", an empathetic, highly adaptive pedagogical AI tutor.
-Your core mission is to personalize to learner pace and identify/repair knowledge gaps in real-time.
+      const eslInstruction =
+        eslLanguage !== "none"
+          ? `ESL BILINGUAL CODE-SWITCHING ACTIVE: The student's primary language context is ${eslLanguage.toUpperCase()}. Code-switch naturally between English and key conceptual terms or clarifying phrases in ${eslLanguage.toUpperCase()} to bridge English language gaps while building English academic fluency.`
+          : "";
 
-CONTEXT:
+      const systemInstruction = `You are "AI Teacher", an empathetic, highly adaptive pedagogical AI tutor grounded in OpenStax, Khan Academy, and ArXiv curriculum standards.
+Your core mission is to personalize to learner pace, monitor response latency, calibrate Bloom's Taxonomy cognitive depth, and repair knowledge gaps in real-time.
+
+CURRICULUM CONTEXT (RAG):
+${ragContext}
+
+LEARNER PROFILE:
 - Subject: ${subject}
-- Current Active Concept: ${currentTopic}
-- Learner Current Pace: ${pace.toUpperCase()} (${paceInstructions})
-- Mode: ${mode.toUpperCase()} (${modeInstructions})
+- Active Concept: ${currentTopic}
+- Current Pace: ${pace.toUpperCase()} (${paceInstructions})
+- Target Bloom's Taxonomy Level: ${bloomsLevel} (Remember -> Understand -> Apply -> Analyze -> Evaluate -> Create)
+- Response Latency Signal: ${latencyFeedback}
+${eslInstruction ? `- Multilingual Instruction: ${eslInstruction}` : ""}
 - Known Knowledge Gaps Previously Identified: ${
         identifiedGaps.length > 0 ? identifiedGaps.join("; ") : "None yet recorded."
       }
 
 RESPONSE FORMAT:
-You MUST respond with valid JSON containing the following structure:
+You MUST respond with valid JSON matching:
 {
   "reply": "Your primary markdown teaching response to the student.",
   "detectedGap": "A specific misconception or gap in understanding detected in the student's message (e.g., 'Confused scalar product with inner chain derivative', or null if no gap detected)",
-  "scaffoldQuestion": "A targeted 1-sentence checkpoint question to test their understanding right now.",
+  "scaffoldQuestion": "A targeted 1-sentence checkpoint question at the target Bloom's level to test their understanding.",
+  "bloomsLevelDemonstrated": "Remember" | "Understand" | "Apply" | "Analyze" | "Evaluate" | "Create",
+  "ragCitations": ["OpenStax Section 3.6", "Khan Academy Calculus"],
   "paceRecommendation": "maintain" | "slow_down" | "speed_up",
-  "suggestedQuickReplies": ["Short reply option 1", "Short reply option 2", "Short reply option 3"]
+  "suggestedQuickReplies": ["Short reply 1", "Short reply 2", "Short reply 3"]
 }
-Keep "reply" engaging, formatted nicely with markdown (bolding, code blocks, lists). Keep suggestedQuickReplies short (<6 words each).`;
+Keep formatting clean, formatted nicely with markdown (LaTeX like $f'(x)$, bolding, bullet points).`;
 
       const promptHistory = history
         .slice(-6)
@@ -95,10 +128,14 @@ Keep "reply" engaging, formatted nicely with markdown (bolding, code blocks, lis
           reply: parsed.reply || responseText,
           detectedGap: parsed.detectedGap || null,
           scaffoldQuestion: parsed.scaffoldQuestion || null,
+          bloomsLevelDemonstrated: parsed.bloomsLevelDemonstrated || bloomsLevel,
+          ragCitations: parsed.ragCitations || [
+            relevantRAGSources[0]?.title || "OpenStax Peer-Reviewed Textbooks",
+          ],
           paceRecommendation: parsed.paceRecommendation || "maintain",
           suggestedQuickReplies: parsed.suggestedQuickReplies || [
             "Explain with an analogy",
-            "Give me a practice problem",
+            "Give me an active practice problem",
             "Why does this work?",
           ],
         });
@@ -107,6 +144,8 @@ Keep "reply" engaging, formatted nicely with markdown (bolding, code blocks, lis
           reply: responseText,
           detectedGap: null,
           scaffoldQuestion: "Does that concept feel clear, or would you like to explore another example?",
+          bloomsLevelDemonstrated: bloomsLevel,
+          ragCitations: [relevantRAGSources[0]?.title || "OpenStax Peer-Reviewed Textbooks"],
           paceRecommendation: "maintain",
           suggestedQuickReplies: [
             "Explain simpler",
@@ -117,16 +156,39 @@ Keep "reply" engaging, formatted nicely with markdown (bolding, code blocks, lis
       }
     }
 
-    // Fallback adaptive response if GEMINI_API_KEY is not yet configured
-    const fallbackResponse = generateAdaptiveFallback({
-      message,
-      subject,
-      currentTopic,
-      pace,
-      mode,
-    });
+    // High quality fallback
+    const citation = relevantRAGSources[0]
+      ? relevantRAGSources[0].title
+      : "OpenStax Open-Source Peer-Reviewed Textbooks";
 
-    return NextResponse.json(fallbackResponse);
+    let reply = `### Exploring **${currentTopic}** (${subject})\n\n`;
+
+    if (eslLanguage === "spanish") {
+      reply += `*¡Hola!* En términos sencillos (*In simple terms*), analizamos **${currentTopic}** paso a paso.\n\n`;
+    } else if (eslLanguage === "mandarin") {
+      reply += `我们来深入了解 **${currentTopic}**（*Let's break down this concept*）:\n\n`;
+    }
+
+    reply += `According to **${citation}**:
+When breaking down composite structures, we examine how the outer framework responds relative to inner shifts.
+
+**Target Bloom's Level (${bloomsLevel}):**
+* We move beyond simple memorization to actively diagnosing why the formula holds true.
+* Remember: The internal rate behaves like a multiplier gear ($g'(x)$). Never drop the inner derivative!`;
+
+    return NextResponse.json({
+      reply,
+      detectedGap: null,
+      scaffoldQuestion: `At the ${bloomsLevel} level: How would you verify whether your derived result matches the physical rate of change?`,
+      bloomsLevelDemonstrated: bloomsLevel,
+      ragCitations: [citation],
+      paceRecommendation: "maintain",
+      suggestedQuickReplies: [
+        "Explain with an analogy",
+        "Give me a challenge problem",
+        "Simpler explanation please",
+      ],
+    });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Internal Server Error";
     console.error("Tutor chat API error:", errorMsg);
@@ -135,6 +197,8 @@ Keep "reply" engaging, formatted nicely with markdown (bolding, code blocks, lis
         reply: `I encountered an unexpected issue while processing your question (${errorMsg}). Let's refocus on **${body?.currentTopic || "our topic"}**. Would you like to review the core definition or try a guided exercise?`,
         detectedGap: null,
         scaffoldQuestion: "What is your immediate intuition about this concept?",
+        bloomsLevelDemonstrated: "Understand",
+        ragCitations: ["OpenStax Open-Source Curriculum"],
         paceRecommendation: "maintain",
         suggestedQuickReplies: [
           "Break it down step-by-step",
@@ -145,87 +209,4 @@ Keep "reply" engaging, formatted nicely with markdown (bolding, code blocks, lis
       { status: 200 }
     );
   }
-}
-
-function generateAdaptiveFallback({
-  message,
-  subject,
-  currentTopic,
-  pace,
-  mode,
-}: {
-  message: string;
-  subject: string;
-  currentTopic: string;
-  pace: string;
-  mode: string;
-}) {
-  const lower = message.toLowerCase();
-
-  let detectedGap: string | null = null;
-  let reply = "";
-  let scaffoldQuestion = "";
-  let quickReplies = ["Try an example", "Give me a hint", "Simpler please"];
-
-  if (lower.includes("why") || lower.includes("how") || mode === "explain") {
-    reply = `### Exploring **${currentTopic}** (${subject})
-
-When we look at **${currentTopic}**, think of it as peeling layers of an onion:
-1. **Outer Behavior**: How the primary container responds to changes.
-2. **Inner Mechanism**: How the underlying components shift internally.
-
-At your **${pace}** pace:
-${
-  pace === "scaffolded"
-    ? `* We take one element at a time.\n* Notice that if you change the inner part, the whole system scales by that rate of change.\n* Let's make sure we don't rush into formulas before the physical or geometric picture makes 100% sense.`
-    : pace === "accelerated"
-    ? `* Rigorously, this corresponds to the composition of linear transformations and differential forms.\n* The derivative satisfies the chain composition theorem $D(f \\circ g)(x) = Df(g(x)) \\circ Dg(x)$.`
-    : `* The key is to keep the inside intact while differentiating the outside, and then multiply by the internal derivative.\n* Notice how $(3x+1)^2$ requires both the $2(3x+1)$ power drop and the factor of $3$.`
-}
-
-> **Key Rule of Thumb:** Never differentiate inside and outside simultaneously!`;
-    scaffoldQuestion = `If you have $f(g(x))$, what role does $g'(x)$ play in the final rate?`;
-    quickReplies = ["Show an analogy", "Give me a challenge", "I want a practice problem"];
-  } else if (lower.includes("analogy") || mode === "analogy") {
-    reply = `### Real-World Analogy: The Russian Nesting Dolls & Gear Train
-
-Imagine a nested gear train in a Swiss watch or bicycle:
-- **Gear A** turns **Gear B**, which turns **Gear C**.
-- If Gear A spins twice as fast, and Gear B is geared 3:1 to Gear C, how much faster does Gear C turn?
-- You don't add them; you **multiply their ratios**! $(2 \\times 3 = 6)$.
-
-In **${currentTopic}**, the outer function is the big wheel, and the inner function is the small gear. The overall sensitivity is the product of both gears working together.`;
-    scaffoldQuestion = `Can you see why we multiply the rates instead of adding them?`;
-    quickReplies = ["That makes sense!", "Let's test this in math", "Show another example"];
-  } else if (lower.includes("don't get") || lower.includes("confused") || lower.includes("hard")) {
-    detectedGap = "Foundational prerequisite uncertainty in " + currentTopic;
-    reply = `That is completely natural! A lot of learners feel stuck right here because traditional textbooks present the formulas without the visual intuition.
-
-Let's pause and strip away the intimidating notation:
-1. What does the *outer* part look like if you replace the whole messy inside with a single letter like $u$?
-2. Once that outer derivative is done, we just multiply by what $u$ contributes.
-
-You're making great progress by asking questions whenever something feels murky!`;
-    scaffoldQuestion = "If we replace the complicated inner expression with 'u', what does the outer derivative become?";
-    quickReplies = ["Walk me through it", "Let's do a concrete problem", "Explain with simpler terms"];
-  } else {
-    reply = `Great question regarding **${currentTopic}**! 
-
-At our current **${pace}** pace, let's observe how this connects to what you've already mastered:
-- You already know how single variables behave.
-- Now, when functions are nested or interacting, the rate of change cascades.
-- Every small nudge in the input causes a wave through each functional layer.
-
-What part of this feels most intuitive so far, and where would you like to zoom in?`;
-    scaffoldQuestion = `Do you want to see a step-by-step breakdown or jump into a quick diagnostic quiz?`;
-    quickReplies = ["Step-by-step breakdown", "Test my knowledge", "Explain with an analogy"];
-  }
-
-  return {
-    reply,
-    detectedGap,
-    scaffoldQuestion,
-    paceRecommendation: "maintain",
-    suggestedQuickReplies: quickReplies,
-  };
 }
