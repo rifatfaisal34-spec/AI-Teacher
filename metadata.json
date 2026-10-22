@@ -1,0 +1,8 @@
+{
+  "name": "AI Teacher",
+  "description": "Adaptive tutor that personalizes to learner pace and gaps",
+  "permissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
