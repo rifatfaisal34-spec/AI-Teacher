@@ -75,28 +75,28 @@ export function DiagnosticPractice({
   };
 
   return (
-    <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-5 shadow-xl">
-      <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+    <div className="bg-[#121214] rounded-2xl border border-neutral-800 p-5 shadow-xl">
+      <div className="flex items-center justify-between pb-3 mb-4 border-b border-neutral-800">
         <div className="flex items-center gap-2">
-          <span className="w-6 h-6 rounded-md bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs font-bold">
+          <span className="w-6 h-6 rounded-md bg-[#E8B288]/20 text-[#E8B288] border border-[#E8B288]/30 flex items-center justify-center text-xs font-bold">
             Q
           </span>
-          <span className="text-xs font-semibold text-slate-200">
+          <span className="text-xs font-semibold text-neutral-200">
             Diagnostic Knowledge Check
           </span>
         </div>
-        <span className="text-[11px] text-slate-400 font-medium">
+        <span className="text-[11px] text-neutral-400 font-medium">
           Target: {activeConcept.title}
         </span>
       </div>
 
       {/* Question prompt */}
-      <h3 className="text-sm font-medium text-slate-100 leading-relaxed mb-4">
+      <h3 className="font-serif text-lg font-normal text-white leading-relaxed mb-4">
         {question.question}
       </h3>
 
       {/* Options */}
-      <div className="space-y-2 mb-4">
+      <div className="space-y-2.5 mb-4">
         {question.options.map((opt, idx) => {
           const isSelected = selectedOption === idx;
           const isTheCorrectOption = hasSubmitted && idx === question.correctIndex;
@@ -108,25 +108,25 @@ export function DiagnosticPractice({
               type="button"
               disabled={hasSubmitted}
               onClick={() => setSelectedOption(idx)}
-              className={`w-full text-left p-3 rounded-xl border text-xs sm:text-sm font-medium transition-all flex items-start gap-3 ${
+              className={`w-full text-left p-3.5 rounded-xl border text-xs sm:text-sm font-mono transition-all flex items-start gap-3 cursor-pointer ${
                 isTheCorrectOption
-                  ? "bg-emerald-950/40 border-emerald-500 text-emerald-200"
+                  ? "bg-emerald-950/20 border-emerald-500/80 text-emerald-200"
                   : isTheWrongSelection
-                  ? "bg-rose-950/40 border-rose-500 text-rose-200"
+                  ? "bg-rose-950/20 border-rose-500/80 text-rose-200"
                   : isSelected
-                  ? "bg-indigo-900/30 border-indigo-500 text-indigo-100"
-                  : "bg-slate-800/40 border-slate-800 text-slate-300 hover:bg-slate-800/80 hover:border-slate-700"
+                  ? "bg-[#222226] border-neutral-500 text-white ring-1 ring-neutral-500"
+                  : "bg-[#18181b] border-neutral-800 text-neutral-300 hover:border-neutral-700 hover:text-white"
               }`}
             >
               <div
                 className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold border mt-0.5 ${
                   isTheCorrectOption
-                    ? "bg-emerald-500 text-slate-950 border-emerald-400"
+                    ? "bg-emerald-500 text-neutral-950 border-emerald-400"
                     : isTheWrongSelection
                     ? "bg-rose-500 text-white border-rose-400"
                     : isSelected
-                    ? "bg-indigo-600 text-white border-indigo-500"
-                    : "border-slate-700 text-slate-400 bg-slate-900"
+                    ? "bg-[#E8B288] text-neutral-950 border-[#E8B288]"
+                    : "border-neutral-700 text-neutral-400 bg-neutral-900"
                 }`}
               >
                 {String.fromCharCode(65 + idx)}
@@ -144,8 +144,8 @@ export function DiagnosticPractice({
       {!hasSubmitted && (
         <div className="mb-4">
           {showHint ? (
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200">
-              <span className="font-semibold text-amber-300 flex items-center gap-1 mb-1">
+            <div className="p-3 rounded-xl bg-[#18181b] border border-neutral-800 text-xs text-neutral-300">
+              <span className="font-semibold text-[#E8B288] flex items-center gap-1 mb-1">
                 <Lightbulb className="w-3.5 h-3.5" /> Scaffold Hint:
               </span>
               {question.hint}
@@ -154,7 +154,7 @@ export function DiagnosticPractice({
             <button
               type="button"
               onClick={() => setShowHint(true)}
-              className="text-xs text-slate-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
+              className="text-xs text-neutral-400 hover:text-neutral-200 flex items-center gap-1 transition-colors underline underline-offset-4 cursor-pointer"
             >
               <HelpCircle className="w-3.5 h-3.5" />
               <span>Need a hint before answering?</span>
@@ -169,7 +169,7 @@ export function DiagnosticPractice({
           type="button"
           disabled={selectedOption === null}
           onClick={handleSubmit}
-          className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white text-xs font-semibold transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5"
+          className="w-full py-2.5 rounded-xl bg-[#E8B288] hover:bg-[#d9a47a] disabled:opacity-40 text-neutral-950 text-xs font-semibold transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <span>Submit for Diagnostic Evaluation</span>
           <ArrowRight className="w-3.5 h-3.5" />

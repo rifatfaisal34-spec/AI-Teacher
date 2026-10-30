@@ -222,19 +222,19 @@ export function VisualMathCanvas({
   };
 
   return (
-    <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-5 shadow-xl space-y-4">
+    <div className="bg-[#121214] rounded-2xl border border-neutral-800 p-5 sm:p-6 shadow-xl space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-800">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+            <span className="p-1.5 rounded-lg bg-[#222226] text-[#E8B288] border border-neutral-700">
               <Camera className="w-4 h-4" />
             </span>
-            <h3 className="text-sm font-semibold text-slate-100">
+            <h3 className="text-sm font-semibold text-white">
               Visual AI Math & Derivation Inspector
             </h3>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-neutral-400 mt-0.5">
             Write your step-by-step math solution on the scratchpad or upload a photo of your notebook.
           </p>
         </div>
@@ -254,10 +254,10 @@ export function VisualMathCanvas({
                 ]
               )
             }
-            className={`px-2 py-1 rounded text-[11px] font-medium border transition-colors ${
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors ${
               activePreset === "Chain Rule Trap"
-                ? "bg-indigo-600/30 border-indigo-500 text-indigo-200"
-                : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                ? "bg-[#27272a] border-[#E8B288] text-white"
+                : "bg-[#18181b] text-neutral-400 border-neutral-800 hover:text-white hover:bg-neutral-800"
             }`}
           >
             Chain Rule Trap
@@ -274,10 +274,10 @@ export function VisualMathCanvas({
                 ]
               )
             }
-            className={`px-2 py-1 rounded text-[11px] font-medium border transition-colors ${
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors ${
               activePreset === "Product Rule Error"
-                ? "bg-indigo-600/30 border-indigo-500 text-indigo-200"
-                : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                ? "bg-[#27272a] border-[#E8B288] text-white"
+                : "bg-[#18181b] text-neutral-400 border-neutral-800 hover:text-white hover:bg-neutral-800"
             }`}
           >
             Product Rule Trap
@@ -286,14 +286,14 @@ export function VisualMathCanvas({
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950/80 p-2 rounded-xl border border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-[#18181b] p-2 rounded-xl border border-neutral-800">
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setTool("pen")}
             className={`p-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors ${
               tool === "pen"
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                ? "bg-[#E8B288] text-neutral-950 shadow-sm"
+                : "text-neutral-400 hover:text-white hover:bg-[#222226]"
             }`}
             title="Pen"
           >
@@ -304,8 +304,8 @@ export function VisualMathCanvas({
             onClick={() => setTool("eraser")}
             className={`p-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors ${
               tool === "eraser"
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                ? "bg-[#E8B288] text-neutral-950 shadow-sm"
+                : "text-neutral-400 hover:text-white hover:bg-[#222226]"
             }`}
             title="Eraser"
           >
@@ -313,11 +313,11 @@ export function VisualMathCanvas({
             <span>Eraser</span>
           </button>
 
-          <div className="h-4 w-px bg-slate-800 mx-1"></div>
+          <div className="h-4 w-px bg-neutral-800 mx-1"></div>
 
           {/* Color picks */}
           <div className="flex items-center gap-1">
-            {["#818cf8", "#38bdf8", "#34d399", "#fbbf24", "#f43f5e"].map((c) => (
+            {["#E8B288", "#e2e8f0", "#38bdf8", "#34d399", "#f87171"].map((c) => (
               <button
                 key={c}
                 onClick={() => {
@@ -327,20 +327,20 @@ export function VisualMathCanvas({
                 style={{ backgroundColor: c }}
                 className={`w-4 h-4 rounded-full transition-transform ${
                   color === c && tool === "pen"
-                    ? "scale-125 ring-2 ring-white ring-offset-1 ring-offset-slate-900"
+                    ? "scale-125 ring-2 ring-white ring-offset-1 ring-offset-neutral-950"
                     : "opacity-70 hover:opacity-100"
                 }`}
               />
             ))}
           </div>
 
-          <div className="h-4 w-px bg-slate-800 mx-1"></div>
+          <div className="h-4 w-px bg-neutral-800 mx-1"></div>
 
           {/* Line width */}
           <select
             value={lineWidth}
             onChange={(e) => setLineWidth(Number(e.target.value))}
-            className="bg-slate-900 border border-slate-700 rounded text-[11px] text-slate-300 px-1.5 py-0.5 focus:outline-none"
+            className="bg-[#121214] border border-neutral-700 rounded text-[11px] text-neutral-300 px-1.5 py-0.5 focus:outline-none"
           >
             <option value="2">Fine (2px)</option>
             <option value="3">Normal (3px)</option>
@@ -350,8 +350,8 @@ export function VisualMathCanvas({
 
         <div className="flex items-center gap-2">
           {/* Upload image */}
-          <label className="cursor-pointer inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-200 px-2 py-1 rounded bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors">
-            <Upload className="w-3 h-3 text-indigo-400" />
+          <label className="cursor-pointer inline-flex items-center gap-1 text-[11px] font-medium text-neutral-400 hover:text-white px-2.5 py-1 rounded-lg bg-[#121214] border border-neutral-800 hover:border-neutral-700 transition-colors">
+            <Upload className="w-3 h-3 text-[#E8B288]" />
             <span>Upload Photo</span>
             <input
               type="file"
@@ -363,7 +363,7 @@ export function VisualMathCanvas({
 
           <button
             onClick={clearCanvas}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
             title="Clear canvas"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -372,7 +372,7 @@ export function VisualMathCanvas({
           <button
             onClick={handleAnalyzeCanvas}
             disabled={isAnalyzing}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition-all"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#E8B288] hover:bg-[#d9a47a] disabled:opacity-50 text-neutral-950 text-xs font-semibold shadow-sm transition-all cursor-pointer"
           >
             {isAnalyzing ? (
               <>
@@ -390,7 +390,7 @@ export function VisualMathCanvas({
       </div>
 
       {/* Canvas container */}
-      <div className="relative rounded-xl border border-slate-800 overflow-hidden bg-[#090d16] touch-none">
+      <div className="relative rounded-xl border border-neutral-800 overflow-hidden bg-[#0A0A0C] touch-none">
         <canvas
           ref={canvasRef}
           width={750}

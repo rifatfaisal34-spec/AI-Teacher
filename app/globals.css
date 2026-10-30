@@ -1,1 +1,36 @@
 @import "tailwindcss";
+
+:root {
+  --font-serif: var(--font-serif, "Newsreader", Georgia, serif);
+  --font-sans: var(--font-sans, "Plus Jakarta Sans", sans-serif);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #0A0A0C;
+  color: #F4F4F5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+/* Custom dark scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}

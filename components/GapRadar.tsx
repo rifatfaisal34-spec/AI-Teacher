@@ -47,31 +47,31 @@ export function GapRadar({
     totalCount > 0 ? Math.round((masteredCount / totalCount) * 100) : 0;
 
   return (
-    <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-5 shadow-xl">
+    <div className="bg-[#121214] rounded-2xl border border-neutral-800 p-5 shadow-xl">
       {/* Header and tabs */}
-      <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+      <div className="flex items-center justify-between pb-3 mb-4 border-b border-neutral-800">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setActiveTab("gaps")}
               className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5 ${
                 activeTab === "gaps"
-                  ? "bg-indigo-600/30 text-indigo-200 border border-indigo-500/30"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-[#222226] text-white border border-neutral-700"
+                  : "text-neutral-400 hover:text-white"
               }`}
             >
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+              <ShieldAlert className="w-3.5 h-3.5 text-[#E8B288]" />
               <span>Gaps Radar ({openGaps.length})</span>
             </button>
             <button
               onClick={() => setActiveTab("notes")}
               className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1.5 ${
                 activeTab === "notes"
-                  ? "bg-indigo-600/30 text-indigo-200 border border-indigo-500/30"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-[#222226] text-white border border-neutral-700"
+                  : "text-neutral-400 hover:text-white"
               }`}
             >
-              <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
+              <BookOpen className="w-3.5 h-3.5 text-[#E8B288]" />
               <span>Study Insights</span>
             </button>
           </div>
@@ -80,12 +80,12 @@ export function GapRadar({
         {/* Mastery progress circle */}
         <div className="flex items-center gap-2">
           <div className="text-right">
-            <div className="text-[10px] text-slate-400">Mastery Health</div>
-            <div className="text-xs font-bold text-emerald-400">
+            <div className="text-[10px] text-neutral-400">Mastery Health</div>
+            <div className="text-xs font-bold text-[#E8B288]">
               {masteryPercentage}%
             </div>
           </div>
-          <div className="w-8 h-8 rounded-full bg-slate-800 border-2 border-emerald-500/80 flex items-center justify-center text-[10px] font-bold text-white">
+          <div className="w-8 h-8 rounded-full bg-[#18181b] border-2 border-[#E8B288]/80 flex items-center justify-center text-[10px] font-bold text-white">
             {masteredCount}/{totalCount}
           </div>
         </div>

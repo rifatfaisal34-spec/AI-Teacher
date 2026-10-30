@@ -106,21 +106,21 @@ export const PRESET_CURRICULA: SubjectCurriculum[] = [
       {
         id: "q-calc-2",
         conceptId: "calc-product-rule",
-        question: "Differentiate f(x) = x³ * sin(x).",
+        question: "Differentiate f(x) = x² · sin(x)",
         options: [
-          "3x² * cos(x)",
-          "3x² sin(x) + x³ cos(x)",
-          "3x² sin(x) - x³ cos(x)",
-          "x³ cos(x)"
+          "3x² · cos(x)",
+          "2x · sin(x) + x² · cos(x)",
+          "2x · sin(x) - x² · cos(x)",
+          "x² · cos(x)"
         ],
         correctIndex: 1,
-        explanation: "Using the Product Rule (u*v)' = u'v + uv': u=x³ (u'=3x²), v=sin(x) (v'=cos(x)). Result: 3x²sin(x) + x³cos(x).",
+        explanation: "Using the Product Rule (u·v)' = u'v + uv': with u = x² (u' = 2x) and v = sin(x) (v' = cos(x)). Combining gives: 2x · sin(x) + x² · cos(x).",
         misconceptionMap: {
-          0: "Multiplied individual derivatives (u' * v') instead of applying the product rule formula",
+          0: "Multiplied individual derivatives (u' · v') instead of applying the product rule formula",
           2: "Accidentally placed a minus sign as if doing the quotient rule",
           3: "Only differentiated the second factor, forgetting the derivative of the first term"
         },
-        hint: "Recall: Derivative of first times second, PLUS first times derivative of second."
+        hint: "Recall the Product Rule: (u·v)' = u'v + uv'. Identify u = x² and v = sin(x)."
       }
     ]
   },
